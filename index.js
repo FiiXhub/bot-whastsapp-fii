@@ -94,6 +94,7 @@ const user = data.participants[0].split("@")[0]
 
 const text = `
 👋 Selamat datang @${user}
+˚ ༘♡ ·˚꒰ ᨰׁׅꫀׁׅܻ݊ᥣׁׅ֪ᝯׁ֒ᨵׁׅׅꩇׁׅ֪݊ ꫀׁׅܻ݊ ꒱ ₊˚ˑ༄
 
 *NIGHTFALL SILENT SLAUGHTER*
 
@@ -344,6 +345,7 @@ text:"🛑 Undangan otomatis dihentikan"
 }
 
 startBot()
+
 
 
 
