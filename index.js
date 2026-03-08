@@ -11,7 +11,7 @@ let welcomeGroups = new Set()
 let antilinkGroups = new Set()
 let undanganGroups = {}
 
-async function startBot() {
+async function startBot(){
 
 const { state, saveCreds } = await useMultiFileAuthState("session")
 const { version } = await fetchLatestBaileysVersion()
@@ -27,10 +27,36 @@ sock.ev.on("creds.update", saveCreds)
 
 console.log("Bot WhatsApp Aktif")
 
-// PAIRING CODE LOGIN
-if (!sock.authState.creds.registered) {
+// CONNECTION EVENT
+sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
+
+if(connection === "connecting"){
+console.log("Menghubungkan ke WhatsApp...")
+}
+
+if(connection === "open"){
+console.log("✅ Bot terhubung")
+}
+
+if(connection === "close"){
+
+const shouldReconnect =
+lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
+
+console.log("Koneksi terputus")
+
+if(shouldReconnect){
+startBot()
+}
+
+}
+
+// PAIRING CODE
+if(!sock.authState.creds.registered){
 
 const phoneNumber = "6287886582175" // GANTI NOMOR KAMU
+
+try{
 
 const code = await sock.requestPairingCode(phoneNumber)
 
@@ -39,23 +65,9 @@ console.log("PAIRING CODE WHATSAPP")
 console.log(code)
 console.log("================================")
 
+}catch(e){
+console.log("Menunggu koneksi pairing...")
 }
-
-// CONNECTION EVENT
-sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
-
-if (connection === "open") {
-console.log("✅ Bot terhubung")
-}
-
-if (connection === "close") {
-
-const shouldReconnect =
-lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
-
-console.log("Koneksi terputus")
-
-if (shouldReconnect) startBot()
 
 }
 
@@ -66,14 +78,12 @@ sock.ev.on("group-participants.update", async (data) => {
 
 const groupId = data.id
 
-if (data.action === "add" && welcomeGroups.has(groupId)) {
+if(data.action === "add" && welcomeGroups.has(groupId)){
 
 const user = data.participants[0].split("@")[0]
 
 const text = `
 👋 Selamat datang @${user}
-
-˚ ༘♡ ·˚꒰ ᨰׁׅꫀׁׅܻ݊ᥣׁׅ֪ᝯׁ֒ᨵׁׅׅꩇׁׅ֪݊ ꫀׁׅܻ݊ ꒱ ₊˚ˑ༄
 
 *NIGHTFALL SILENT SLAUGHTER*
 
@@ -84,9 +94,9 @@ Asal:
 Sudah bisa CN / Belum?
 `
 
-await sock.sendMessage(groupId, {
-text: text,
-mentions: [data.participants[0]]
+await sock.sendMessage(groupId,{
+text:text,
+mentions:[data.participants[0]]
 })
 
 }
@@ -97,21 +107,20 @@ mentions: [data.participants[0]]
 sock.ev.on("messages.upsert", async ({ messages }) => {
 
 const msg = messages[0]
-if (!msg.message) return
+if(!msg.message) return
 
 const text =
 msg.message.conversation ||
 msg.message.extendedTextMessage?.text
 
-if (!text) return
+if(!text) return
 
 const from = msg.key.remoteJid
 const sender = msg.key.participant || from
 
-// CEK ADMIN
 let isAdmin = false
 
-if (from.endsWith("@g.us")) {
+if(from.endsWith("@g.us")){
 
 const metadata = await sock.groupMetadata(from)
 
@@ -124,13 +133,13 @@ isAdmin = admins.includes(sender)
 }
 
 // MENU
-if (text === ".menu") {
+if(text === ".menu"){
 
-await sock.sendMessage(from, {
-text: `
-👑 *NSSxFII MENU*
+await sock.sendMessage(from,{
+text:`
+👑 NSSxFII MENU
 
-ADMIN:
+ADMIN
 .setwelcome
 .setundangan
 .interval
@@ -138,7 +147,7 @@ ADMIN:
 .antilink
 .kick
 
-MEMBER:
+MEMBER
 .rules
 `
 })
@@ -146,165 +155,155 @@ MEMBER:
 }
 
 // SET WELCOME
-if (text === ".setwelcome") {
+if(text === ".setwelcome"){
 
-if (!isAdmin)
-return sock.sendMessage(from,{text:"❌ Hanya admin yang bisa pakai command ini"})
+if(!isAdmin)
+return sock.sendMessage(from,{text:"❌ Hanya admin"})
 
 welcomeGroups.add(from)
 
-await sock.sendMessage(from, {
-text: "✅ Welcome diaktifkan"
-})
+await sock.sendMessage(from,{text:"✅ Welcome aktif"})
 
 }
 
 // RULES
-if (text === ".rules") {
+if(text === ".rules"){
 
-await sock.sendMessage(from, {
-text: `
+await sock.sendMessage(from,{
+text:`
 📜 RULES GROUP
 
 1. WAJIB 17+
-2. DILARANG DRAMA SESAMA MEMBER
-3. DILARANG MEMBUAT KERIBUTAN DALAM STATUS MENYANDANG NAMA CLAN
-4. DILARANG MENJELEKKAN SESAMA MEMBER
-5. DILARANG OUT KARENA PACARAN
-6. HARUS KOMPAK DAN SALING BERBAUR
-7. DILARANG FAKER
-8. WAJIB MEMPUNYAI VIP DAN COMMAND
-9. HANYA YANG SUDAH CN BOLEH INTERVIEW
-10. JAGA NAMA BAIK CLAN
-11. DILARANG BERMUKA DUA
-12. MASUK BAIK BAIK, OUT JUGA HARUS BAIK BAIK
+2. DILARANG DRAMA
+3. DILARANG MEMBUAT KERIBUTAN
+4. DILARANG MENJELEKKAN MEMBER
+5. DILARANG FAKER
+6. JAGA NAMA BAIK CLAN
 `
 })
 
 }
 
 // ANTILINK
-if (text === ".antilink") {
+if(text === ".antilink"){
 
-if (!isAdmin)
-return sock.sendMessage(from,{text:"❌ Hanya admin yang bisa pakai command ini"})
+if(!isAdmin)
+return sock.sendMessage(from,{text:"❌ Hanya admin"})
 
 antilinkGroups.add(from)
 
-await sock.sendMessage(from, {
-text: "🚫 Anti link aktif"
-})
+await sock.sendMessage(from,{text:"🚫 Anti link aktif"})
 
 }
 
 // DETEKSI LINK
-if (antilinkGroups.has(from)) {
+if(antilinkGroups.has(from)){
 
-if (text.includes("https://chat.whatsapp.com")) {
+if(text.includes("https://chat.whatsapp.com")){
 
-await sock.sendMessage(from, {
-text: "🚫 Link grup dilarang!"
+await sock.sendMessage(from,{
+text:"🚫 Link grup dilarang!"
 })
 
 }
 
 }
 
-// KICK MEMBER
-if (text.startsWith(".kick")) {
+// KICK
+if(text.startsWith(".kick")){
 
-if (!isAdmin)
-return sock.sendMessage(from,{text:"❌ Hanya admin yang bisa pakai command ini"})
+if(!isAdmin)
+return sock.sendMessage(from,{text:"❌ Hanya admin"})
 
-if (!msg.message.extendedTextMessage) return
+if(!msg.message.extendedTextMessage) return
 
 const mentioned =
 msg.message.extendedTextMessage.contextInfo?.mentionedJid
 
-if (!mentioned) return
+if(!mentioned) return
 
-await sock.groupParticipantsUpdate(from, mentioned, "remove")
+await sock.groupParticipantsUpdate(from,mentioned,"remove")
 
 }
 
 // SET UNDANGAN
-if (text.startsWith(".setundangan")) {
+if(text.startsWith(".setundangan")){
 
-if (!isAdmin)
-return sock.sendMessage(from,{text:"❌ Hanya admin yang bisa pakai command ini"})
+if(!isAdmin)
+return sock.sendMessage(from,{text:"❌ Hanya admin"})
 
 const pesan = text.replace(".setundangan","").trim()
 
-if (!pesan)
+if(!pesan)
 return sock.sendMessage(from,{
-text:"Contoh:\n.setundangan Ayo join clan NIGHTFALL"
+text:"Contoh:\n.setundangan Ayo join clan"
 })
 
-undanganGroups[from] = {
-text: pesan,
-timer: null
+undanganGroups[from]={
+text:pesan,
+timer:null
 }
 
 await sock.sendMessage(from,{
-text:"✅ Pesan undangan disimpan\nGunakan .interval untuk memulai"
+text:"✅ Pesan undangan disimpan\nGunakan .interval"
 })
 
 }
 
-// INTERVAL UNDANGAN
-if (text.startsWith(".interval")) {
+// INTERVAL
+if(text.startsWith(".interval")){
 
-if (!isAdmin)
-return sock.sendMessage(from,{text:"❌ Hanya admin yang bisa pakai command ini"})
+if(!isAdmin)
+return sock.sendMessage(from,{text:"❌ Hanya admin"})
 
-if (!undanganGroups[from])
+if(!undanganGroups[from])
 return sock.sendMessage(from,{text:"⚠️ Gunakan .setundangan dulu"})
 
 const waktu = text.split(" ")[1]
 
 let ms = 0
 
-if (waktu === "30menit") ms = 1800000
-if (waktu === "1jam") ms = 3600000
-if (waktu === "2jam") ms = 7200000
+if(waktu==="30menit") ms=1800000
+if(waktu==="1jam") ms=3600000
+if(waktu==="2jam") ms=7200000
 
-if (!ms)
+if(!ms)
 return sock.sendMessage(from,{
 text:"Gunakan:\n.interval 30menit\n.interval 1jam\n.interval 2jam"
 })
 
-if (undanganGroups[from].timer)
+if(undanganGroups[from].timer)
 clearInterval(undanganGroups[from].timer)
 
-undanganGroups[from].timer = setInterval(async () => {
+undanganGroups[from].timer=setInterval(async()=>{
 
 await sock.sendMessage(from,{
-text: undanganGroups[from].text
+text:undanganGroups[from].text
 })
 
-}, ms)
+},ms)
 
 await sock.sendMessage(from,{
-text:`✅ Undangan otomatis aktif setiap ${waktu}`
+text:`✅ Undangan aktif setiap ${waktu}`
 })
 
 }
 
 // STOP UNDANGAN
-if (text === ".stopundangan") {
+if(text === ".stopundangan"){
 
-if (!isAdmin)
-return sock.sendMessage(from,{text:"❌ Hanya admin yang bisa pakai command ini"})
+if(!isAdmin)
+return sock.sendMessage(from,{text:"❌ Hanya admin"})
 
-if (!undanganGroups[from])
-return sock.sendMessage(from,{text:"⚠️ Undangan belum aktif"})
+if(!undanganGroups[from])
+return sock.sendMessage(from,{text:"⚠️ Belum aktif"})
 
 clearInterval(undanganGroups[from].timer)
 
 delete undanganGroups[from]
 
 await sock.sendMessage(from,{
-text:"🛑 Undangan otomatis dihentikan"
+text:"🛑 Undangan dihentikan"
 })
 
 }
