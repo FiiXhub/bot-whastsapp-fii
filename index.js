@@ -6,7 +6,6 @@ DisconnectReason
 } = require("@whiskeysockets/baileys")
 
 const P = require("pino")
-const qrcode = require("qrcode-terminal")
 
 let welcomeGroups = new Set()
 let antilinkGroups = new Set()
@@ -20,20 +19,30 @@ const { version } = await fetchLatestBaileysVersion()
 const sock = makeWASocket({
 logger: P({ level: "silent" }),
 auth: state,
-version
+version,
+printQRInTerminal: false
 })
 
 sock.ev.on("creds.update", saveCreds)
 
 console.log("Bot WhatsApp Aktif")
 
-// CONNECTION EVENT
-sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
+// PAIRING CODE LOGIN
+if (!sock.authState.creds.registered) {
 
-if (qr) {
-console.log("Scan QR di WhatsApp")
-qrcode.generate(qr, { small: true })
+const phoneNumber = "6287886582175" // GANTI NOMOR KAMU
+
+const code = await sock.requestPairingCode(phoneNumber)
+
+console.log("================================")
+console.log("PAIRING CODE WHATSAPP")
+console.log(code)
+console.log("================================")
+
 }
+
+// CONNECTION EVENT
+sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
 
 if (connection === "open") {
 console.log("✅ Bot terhubung")
@@ -201,7 +210,7 @@ text: "🚫 Link grup dilarang!"
 
 }
 
-// KICK
+// KICK MEMBER
 if (text.startsWith(".kick")) {
 
 if (!isAdmin)
@@ -210,7 +219,7 @@ return sock.sendMessage(from,{text:"❌ Hanya admin yang bisa pakai command ini"
 if (!msg.message.extendedTextMessage) return
 
 const mentioned =
-msg.message.extendedTextMessage.contextInfo.mentionedJid
+msg.message.extendedTextMessage.contextInfo?.mentionedJid
 
 if (!mentioned) return
 
@@ -242,7 +251,7 @@ text:"✅ Pesan undangan disimpan\nGunakan .interval untuk memulai"
 
 }
 
-// INTERVAL
+// INTERVAL UNDANGAN
 if (text.startsWith(".interval")) {
 
 if (!isAdmin)
@@ -255,16 +264,6 @@ const waktu = text.split(" ")[1]
 
 let ms = 0
 
-if (waktu === "1menit") ms = 60000
-if (waktu === "2menit") ms = 120000
-if (waktu === "3menit") ms = 180000
-if (waktu === "4menit") ms = 240000
-if (waktu === "5menit") ms = 300000
-if (waktu === "6menit") ms = 360000
-if (waktu === "7menit") ms = 420000
-if (waktu === "8menit") ms = 480000
-if (waktu === "9menit") ms = 540000
-if (waktu === "10menit") ms = 600000
 if (waktu === "30menit") ms = 1800000
 if (waktu === "1jam") ms = 3600000
 if (waktu === "2jam") ms = 7200000
@@ -313,6 +312,5 @@ text:"🛑 Undangan otomatis dihentikan"
 })
 
 }
-
 
 startBot()
