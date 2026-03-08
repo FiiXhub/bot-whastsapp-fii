@@ -27,8 +27,11 @@ sock.ev.on("creds.update", saveCreds)
 
 console.log("Bot WhatsApp Aktif")
 
-// CONNECTION EVENT
-sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
+let pairingPrinted = false
+
+sock.ev.on("connection.update", async (update) => {
+
+const { connection, lastDisconnect } = update
 
 if(connection === "connecting"){
 console.log("Menghubungkan ke WhatsApp...")
@@ -51,12 +54,13 @@ startBot()
 
 }
 
-// PAIRING CODE
-if(!sock.authState.creds.registered){
+if(!sock.authState.creds.registered && !pairingPrinted){
 
-const phoneNumber = "6287886582175" // GANTI NOMOR KAMU
+pairingPrinted = true
 
 try{
+
+const phoneNumber = "6287886582175" // GANTI NOMOR
 
 const code = await sock.requestPairingCode(phoneNumber)
 
