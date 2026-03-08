@@ -284,7 +284,7 @@ const waktu = text.split(" ")[1]
 
 let ms = 0
 
-f (waktu === "1menit") ms = 60000
+if (waktu === "1menit") ms = 60000
 if (waktu === "2menit") ms = 120000
 if (waktu === "3menit") ms = 180000
 if (waktu === "4menit") ms = 240000
@@ -344,5 +344,6 @@ text:"🛑 Undangan otomatis dihentikan"
 }
 
 startBot()
+
 
 
