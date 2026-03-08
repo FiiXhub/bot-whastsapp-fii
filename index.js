@@ -58,7 +58,7 @@ if (qr && !sock.authState.creds.registered && !pairingPrinted) {
 
 pairingPrinted = true
 
-const phoneNumber = "628xxxxxxxxxx" // GANTI NOMOR
+const phoneNumber = "6287886582175" // GANTI NOMOR
 
 setTimeout(async () => {
 
@@ -334,3 +334,4 @@ text:"🛑 Undangan otomatis dihentikan"
 }
 
 startBot()
+
